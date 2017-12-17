@@ -31,7 +31,7 @@ private:
 	// time
 	uint8_t tick;
 	void resetTimer();
-	uint8_t getMicros();
+	uint16_t getMicros();
 
 public:
 	int lastPulse;

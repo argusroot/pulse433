@@ -10,7 +10,7 @@ int main(void)
 	Pin *pin_tx = new Pin(&PORTB, &DDRB, &PINB, 5, 0); // 13
 	Pin *pin_rx = new Pin(&PORTD, &DDRD, &PIND, 7, 0); // 7
 
-	int tx = false;
+	int tx = true;
 
 	if(tx) {
 		pulse = new Pulse433(pin_tx, 1);

@@ -24,9 +24,9 @@ Pulse433::Pulse433(Pin *pin, uint8_t isTx){
 
 void Pulse433::sendMsg(uint8_t *data) {
 	pin->write(1);
-	waitMicros(250);
+	waitMicros(400);
 	pin->write(0);
-	waitMillis(10);
+	waitMillis(2);
 
 	for(int i=0; i<3; i++) sendPreamble();
 	for(int i=0; i<8; i++) {
@@ -36,10 +36,9 @@ void Pulse433::sendMsg(uint8_t *data) {
 }
 
 void Pulse433::sendPreamble(){
-	// 220us PREAMBLE
 	waitMicros(120);
 	pin->write(1);
-	waitMicros(100); // 80uS HI pulse
+	waitMicros(100);
 	pin->write(0);
 }
 
@@ -103,35 +102,33 @@ void Pulse433::resetTimer(){
 		TCCR0B = 0; // para timer
 		TCNT0 = 0; // zera
 		TIFR0 |= (1<<TOV0); // resets overflow flag
-		 TCCR0B |= (1 << CS01) | (1 << CS00) ; // 8 prescalar. 1 tick = 1us
-		//TCCR0B |= (1 << CS01) ; // 8 prescalar. 1 tick = 1us
+		TCCR0B |= (1 << CS01) | (1 << CS00) ; // 64 prescalar
 }
 
-uint8_t Pulse433::getMicros()
+uint16_t Pulse433::getMicros()
 {
-    uint8_t micros_return;
+    uint16_t micros_return;
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-		// 1tick = 1us at 8Mhz prescalar 8
 		micros_return = (TCNT0+2)*4;
-	//	micros_return = (TCNT0+20);
     }
 	return micros_return;
 }
 
 void Pulse433::waitMicros(uint32_t micros){
-	uint8_t timer_max = 0xFF; // Counter 0 limit
-	while(micros > timer_max){
+	uint16_t timer_max = 1024; // 16mhz, precalar 64, 4 us por tick
+	while(micros >= timer_max){
 		this->waitMicros(timer_max);
 		micros -= timer_max;
 	}
 	this->resetTimer();
-	while( this->getMicros() < micros );
+	// if not timeout AND not overflow
+	while( (this->getMicros() < micros) &&  !(TIFR0 & (1 << TOV0)) );
 }
 
 void Pulse433::waitMillis(uint32_t millis){
 	// to get 1000 micros
-	for(int i=0; i<1000; i++){
-		this->waitMicros(millis);
+	for(int i=0; i<millis; i++){
+		this->waitMicros(1000);
 	}
 }
 
